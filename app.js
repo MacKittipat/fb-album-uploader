@@ -2,43 +2,55 @@ var request = require('sync-request');
 var fs = require('fs');
 var FormData = require('form-data');
 var https = require('https');
+var util = require('util');
 
 // Get access_token from https://developers.facebook.com/tools/explorer
+// Require `publish_actions` permission.
+// Click `Get Token` > `Get Access Token` to select permission.
 var fbAccessToken = '';
 
-// Create album
-// https://developers.facebook.com/docs/graph-api/reference/user/albums#Creating
-var fbGraphUrl = 'https://graph.facebook.com/v2.4/'
-  + '/{albumId}/albums?access_token='
-  + fbAccessToken + '&name=testmac';
+var userId = '';
+var albumName = '';
+var imageFolder = '';
 
-var res = request(
+// ===== Create album =====
+// https://developers.facebook.com/docs/graph-api/reference/user/albums#Creating
+var fbCreateAlbumUrl = 'https://graph.facebook.com/v2.4/'
+  + '/' + userId + '/albums?access_token='
+  + fbAccessToken + '&name=' + albumName;
+
+var createAlbumRes = request(
   'POST',
-  fbGraphUrl
+  fbCreateAlbumUrl
 );
 
-var jsonString = res.getBody('utf-8');
-console.log(jsonString);
+var createAlbumResString = createAlbumRes.getBody('utf-8');
+var createAlbumResJson = JSON.parse(createAlbumResString);
+console.log('Create album response : ' + createAlbumResString);
 
-var json = JSON.parse(jsonString);
 
-// Upload images
+// ===== Upload images =====
 // https://developers.facebook.com/docs/graph-api/reference/photo#Creating
+// https://aguacatelang.wordpress.com/2013/01/05/post-photo-from-node-js-to-facebook/
 
-var form = new FormData(); //Create multipart form
-form.append('file', fs.createReadStream('/IMG_0756.JPG')); //Put file
+var imagePaths = fs.readdirSync(imageFolder);
+for(var i=0; i<imagePaths.length; i++) {
+  console.log('-----> ' + imagePaths[i]);
+  var form = new FormData();
+  form.append('file', fs.createReadStream(imageFolder + '/' + imagePaths[i]));
 
-var options = {
+  var options = {
     method: 'POST',
     host: 'graph.facebook.com',
-    path: '/' + json.id + '/photos?access_token='+fbAccessToken,
+    path: '/' + createAlbumResJson.id + '/photos?access_token=' + fbAccessToken,
     headers: form.getHeaders(),
+  }
+
+  // Do POST request, callback for response
+  var request = https.request(options, function (res) {
+    console.log(util.inspect(obj));
+  });
+
+  // Binds form to request
+  form.pipe(request);
 }
-
-//Do POST request, callback for response
-var request = https.request(options, function (res){
-     console.log(res);
-});
-
-//Binds form to request
-form.pipe(request);
