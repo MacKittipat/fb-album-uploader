@@ -1,0 +1,8 @@
+{
+  "name": "fb-album-uploader",
+  "version": "1.0.0",
+  "devDependencies": {
+    "sync-request" : "2.0.1",
+    "form-data" : "1.0.0-rc3"
+  }
+}
